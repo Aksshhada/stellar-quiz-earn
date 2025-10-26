@@ -1,12 +1,24 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Hash, ArrowRight, AlertCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Hash, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
+import { getQuizFromFirebase, joinQuizFirebase } from "../firebase";
 
 const JoinQuiz = ({ publicKey }) => {
   const [quizCode, setQuizCode] = useState("");
   const [error, setError] = useState("");
   const [isJoining, setIsJoining] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Auto-fill code from URL if present
+  useEffect(() => {
+    const codeFromUrl = searchParams.get("code");
+    if (codeFromUrl && codeFromUrl.length === 6) {
+      setQuizCode(codeFromUrl);
+      // Auto-join if code is in URL
+      handleJoinQuiz(codeFromUrl);
+    }
+  }, [searchParams]);
 
   const handleCodeChange = (e) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 6);
@@ -14,8 +26,10 @@ const JoinQuiz = ({ publicKey }) => {
     setError("");
   };
 
-  const handleJoinQuiz = async () => {
-    if (quizCode.length !== 6) {
+  const handleJoinQuiz = async (codeToJoin = null) => {
+    const code = codeToJoin || quizCode;
+    
+    if (code.length !== 6) {
       setError("Please enter a valid 6-digit quiz code");
       return;
     }
@@ -24,22 +38,36 @@ const JoinQuiz = ({ publicKey }) => {
     setError("");
 
     try {
-      // TODO: Add your API call here to verify the quiz exists
-      // Example:
-      // const response = await fetch(`/api/quiz/verify/${quizCode}`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ publicKey })
-      // });
+      console.log("🔍 Looking for quiz with code:", code);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // ✅ LOAD FROM FIREBASE
+      const quiz = await getQuizFromFirebase(code);
+      
+      if (!quiz) {
+        setError("Quiz not found. Please check the code and try again.");
+        setIsJoining(false);
+        return;
+      }
+
+      console.log("✅ Quiz found!", quiz);
+      
+      // Join quiz (add participant to Firebase)
+      const joined = await joinQuizFirebase(code, publicKey);
+      
+      if (!joined) {
+        setError("Failed to join quiz. Please try again.");
+        setIsJoining(false);
+        return;
+      }
+
+      console.log("✅ Joined quiz successfully!");
       
       // Navigate to quiz interface
-      navigate(`/quiz/${quizCode}`);
+      navigate(`/quiz/${code}`);
+      
     } catch (err) {
-      console.error("Error joining quiz:", err);
-      setError("Failed to join quiz. Please check the code and try again.");
+      console.error("❌ Error joining quiz:", err);
+      setError("Failed to join quiz. Please check your connection and try again.");
     } finally {
       setIsJoining(false);
     }
@@ -64,7 +92,7 @@ const JoinQuiz = ({ publicKey }) => {
               Join a Quiz
             </h1>
             <p className="text-slate-600">
-              Enter the 6-digit code to join
+              Enter the 6-digit code or click a shared link
             </p>
           </div>
 
@@ -94,9 +122,10 @@ const JoinQuiz = ({ publicKey }) => {
                 onKeyPress={handleKeyPress}
                 placeholder="000000"
                 maxLength={6}
-                className="w-full px-4 py-4 text-center text-3xl font-bold tracking-widest border-2 border-slate-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
+                disabled={isJoining}
+                className="w-full px-4 py-4 text-center text-3xl font-bold tracking-widest border-2 border-slate-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all disabled:bg-slate-50 disabled:cursor-not-allowed"
               />
-              {quizCode.length === 6 && (
+              {quizCode.length === 6 && !isJoining && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
                   <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                     <ArrowRight className="w-4 h-4 text-white" />
@@ -121,14 +150,14 @@ const JoinQuiz = ({ publicKey }) => {
 
           {/* Join Button */}
           <button
-            onClick={handleJoinQuiz}
+            onClick={() => handleJoinQuiz()}
             disabled={quizCode.length !== 6 || isJoining}
             className="w-full flex items-center justify-center space-x-2 py-4 bg-gradient-to-r from-blue-500 to-violet-600 hover:from-blue-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
           >
             {isJoining ? (
               <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Joining...</span>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Joining Quiz...</span>
               </>
             ) : (
               <>
@@ -160,13 +189,7 @@ const JoinQuiz = ({ publicKey }) => {
         {/* Help Text */}
         <div className="mt-6 text-center">
           <p className="text-sm text-slate-600">
-            Don't have a code?{" "}
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Create a new quiz
-            </button>
+            💡 Tip: Share the quiz link with friends and they can join directly!
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Clock, CheckCircle, XCircle, Award, ArrowRight } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Award, ArrowRight, Loader2 } from "lucide-react";
+import { getQuizFromFirebase } from "../firebase";
 
 const QuizInterface = ({ publicKey }) => {
   const { code } = useParams();
@@ -24,7 +25,7 @@ const QuizInterface = ({ publicKey }) => {
     return () => clearInterval(timer);
   }, [quizStartTime]);
 
-  // Load quiz data
+  // Load quiz data from Firebase
   useEffect(() => {
     loadQuiz();
   }, [code]);
@@ -32,68 +33,23 @@ const QuizInterface = ({ publicKey }) => {
   const loadQuiz = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`/api/quiz/${code}`);
-      // const data = await response.json();
-
-      // Simulated quiz data
-      const mockQuiz = {
-        code,
-        topic: "Stellar Blockchain Basics",
-        difficulty: "medium",
-        questions: [
-          {
-            question: "What is the native cryptocurrency of the Stellar network?",
-            options: ["Bitcoin", "Lumens (XLM)", "Ethereum", "Ripple"],
-            correctAnswer: 1,
-            explanation: "Lumens (XLM) is the native cryptocurrency of the Stellar network, used for transaction fees and preventing spam."
-          },
-          {
-            question: "What is the primary purpose of the Stellar network?",
-            options: [
-              "Mining cryptocurrency",
-              "Cross-border payments and asset transfers",
-              "Smart contract execution",
-              "Social media integration"
-            ],
-            correctAnswer: 1,
-            explanation: "Stellar is designed to facilitate fast, low-cost cross-border payments and asset transfers between any pair of currencies."
-          },
-          {
-            question: "How long does a typical Stellar transaction take?",
-            options: ["10 minutes", "1 hour", "3-5 seconds", "24 hours"],
-            correctAnswer: 2,
-            explanation: "Stellar transactions typically settle in 3-5 seconds, making it one of the fastest blockchain networks."
-          },
-          {
-            question: "What consensus mechanism does Stellar use?",
-            options: [
-              "Proof of Work",
-              "Proof of Stake",
-              "Stellar Consensus Protocol (SCP)",
-              "Delegated Proof of Stake"
-            ],
-            correctAnswer: 2,
-            explanation: "Stellar uses the Stellar Consensus Protocol (SCP), which is based on Federated Byzantine Agreement."
-          },
-          {
-            question: "What is an anchor in the Stellar ecosystem?",
-            options: [
-              "A type of cryptocurrency",
-              "An entity that holds deposits and issues credits",
-              "A mining node",
-              "A wallet application"
-            ],
-            correctAnswer: 1,
-            explanation: "Anchors are entities that people trust to hold their deposits and issue credits into the Stellar network."
-          }
-        ]
-      };
-
-      setQuiz(mockQuiz);
-      setAnswers(new Array(mockQuiz.questions.length).fill(null));
+      console.log("🔍 Loading quiz with code:", code);
+      
+      // ✅ LOAD FROM FIREBASE
+      const quizData = await getQuizFromFirebase(code);
+      
+      if (quizData) {
+        console.log("✅ Quiz loaded from Firebase:", quizData);
+        console.log("📝 Questions:", quizData.questions);
+        setQuiz(quizData);
+        setAnswers(new Array(quizData.questions.length).fill(null));
+      } else {
+        console.error("❌ Quiz not found with code:", code);
+        setQuiz(null);
+      }
     } catch (error) {
-      console.error("Error loading quiz:", error);
+      console.error("❌ Error loading quiz:", error);
+      setQuiz(null);
     } finally {
       setLoading(false);
     }
@@ -145,8 +101,8 @@ const QuizInterface = ({ publicKey }) => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-violet-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading quiz...</p>
+          <Loader2 className="w-16 h-16 text-blue-500 animate-spin mx-auto mb-4" />
+          <p className="text-slate-600 text-lg">Loading quiz...</p>
         </div>
       </div>
     );
@@ -155,10 +111,12 @@ const QuizInterface = ({ publicKey }) => {
   if (!quiz) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-violet-50 flex items-center justify-center p-4">
-        <div className="text-center">
+        <div className="text-center bg-white rounded-xl p-8 shadow-lg max-w-md">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Quiz Not Found</h2>
-          <p className="text-slate-600 mb-6">The quiz code you entered is invalid or expired.</p>
+          <p className="text-slate-600 mb-6">
+            The quiz code <span className="font-mono font-bold">{code}</span> is invalid or expired.
+          </p>
           <button
             onClick={() => navigate("/join")}
             className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
@@ -284,7 +242,7 @@ const QuizInterface = ({ publicKey }) => {
                   <h3 className={`font-semibold mb-1 ${
                     isCorrect ? "text-green-900" : "text-red-900"
                   }`}>
-                    {isCorrect ? "Correct!" : "Incorrect"}
+                    {isCorrect ? "Correct! ✓" : "Incorrect ✗"}
                   </h3>
                   <p className={isCorrect ? "text-green-800" : "text-red-800"}>
                     {question.explanation}
