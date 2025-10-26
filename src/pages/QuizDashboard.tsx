@@ -1,3 +1,4 @@
+// src/components/QuizDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -13,8 +14,8 @@ import {
   Share2,
   ExternalLink,
 } from "lucide-react";
-import { generateQuizWithGemini, generateQuizCode } from "../geminiapi";
-import { saveQuizToFirebase, listenToParticipants } from "../firebase";
+import { generateQuizWithGemini, generateQuizCode } from "../geminiapi"; // Updated import path
+import { saveQuizToFirebase, listenToParticipants, getUserQuizzes } from "../firebase"; // Updated import path
 
 const QuizDashboard = ({ publicKey }) => {
   const [isCreating, setIsCreating] = useState(false);
@@ -30,96 +31,120 @@ const QuizDashboard = ({ publicKey }) => {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [activeQuizzes, setActiveQuizzes] = useState([]);
+  const [loadingQuizzes, setLoadingQuizzes] = useState(true);
 
   const navigate = useNavigate();
 
-  // Sample active quizzes (replace with actual data from Firebase)
-  const [activeQuizzes, setActiveQuizzes] = useState([]);
+  // Fetch user's quizzes on component mount
+  useEffect(() => {
+    const fetchUserQuizzes = async () => {
+      if (!publicKey) {
+        console.error("❌ No publicKey provided for fetching quizzes");
+        setError("User authentication required to fetch quizzes");
+        setLoadingQuizzes(false);
+        return;
+      }
 
- // DEBUG VERSION - QuizDashboard with detailed logging
-
-// Add this AFTER line 55 where you see "console.log("Generated Questions:", questions);"
-// Replace the entire try-catch block (lines 48-88) with this:
-
-const handleCreateQuiz = async () => {
-  if (!quizForm.topic.trim()) {
-    setError("Please enter a quiz topic");
-    return;
-  }
-
-  setIsCreating(true);
-  setError("");
-
-  try {
-    // 1. Generate quiz using Gemini AI
-    console.log("🎯 STEP 1: Generating questions with Gemini...");
-    const questions = await generateQuizWithGemini({
-      topic: quizForm.topic,
-      numberOfQuestions: quizForm.numberOfQuestions,
-      difficulty: quizForm.difficulty,
-    });
-    console.log("✅ STEP 1 COMPLETE: Generated", questions.length, "questions");
-    console.log("Questions:", questions);
-
-    // 2. Generate unique quiz code
-    console.log("🎯 STEP 2: Generating quiz code...");
-    const code = generateQuizCode();
-    console.log("✅ STEP 2 COMPLETE: Code =", code);
-
-    // 3. Create quiz object
-    console.log("🎯 STEP 3: Creating quiz object...");
-    const newQuiz = {
-      code,
-      topic: quizForm.topic,
-      difficulty: quizForm.difficulty,
-      questions: questions,
-      questionsCount: questions.length,
-      createdBy: publicKey,
+      console.log("🎯 Fetching quizzes for publicKey:", publicKey);
+      try {
+        const quizzes = await getUserQuizzes(publicKey);
+        console.log("✅ Fetched quizzes:", quizzes);
+        setActiveQuizzes(quizzes.map(quiz => ({
+          ...quiz,
+          participants: quiz.participants ? Object.keys(quiz.participants).length : 0
+        })));
+      } catch (err) {
+        console.error("❌ Error fetching quizzes:", err);
+        setError("Failed to load quizzes. Please try again.");
+      } finally {
+        setLoadingQuizzes(false);
+      }
     };
-    console.log("✅ STEP 3 COMPLETE: Quiz object created");
-    console.log("Quiz:", newQuiz);
 
-    // 4. 🔥 SAVE TO FIREBASE (This is likely where it's failing!)
-    console.log("🎯 STEP 4: Saving to Firebase...");
-    console.log("Calling saveQuizToFirebase with:", newQuiz);
-    
-    try {
-      await saveQuizToFirebase(newQuiz);
-      console.log("✅ STEP 4 COMPLETE: Saved to Firebase successfully!");
-    } catch (firebaseError) {
-      console.error("❌ FIREBASE ERROR:", firebaseError);
-      console.error("Error message:", firebaseError.message);
-      console.error("Error stack:", firebaseError.stack);
-      throw new Error(`Firebase save failed: ${firebaseError.message}`);
+    fetchUserQuizzes();
+  }, [publicKey]);
+
+  const handleCreateQuiz = async () => {
+    if (!quizForm.topic.trim()) {
+      setError("Please enter a quiz topic");
+      console.error("❌ Topic is empty");
+      return;
     }
 
-    // 5. Generate shareable link
-    console.log("🎯 STEP 5: Generating shareable link...");
-    const shareableLink = `${window.location.origin}/join?code=${code}`;
-    console.log("✅ STEP 5 COMPLETE: Link =", shareableLink);
-    
-    // 6. Update UI state
-    console.log("🎯 STEP 6: Updating UI state...");
-    setGeneratedQuiz(newQuiz);
-    setQuizCode(code);
-    setQuizLink(shareableLink);
-    
-    // Add to local state
-    setActiveQuizzes([{ ...newQuiz, participants: 0 }, ...activeQuizzes]);
-    
-    console.log("🎉 ALL STEPS COMPLETE! Quiz created successfully!");
-    
-  } catch (err) {
-    console.error("❌ QUIZ CREATION ERROR:", err);
-    console.error("Error type:", err.name);
-    console.error("Error message:", err.message);
-    console.error("Full error:", err);
-    setError(err.message || "Failed to create quiz. Please try again.");
-  } finally {
-    console.log("🏁 Cleaning up...");
-    setIsCreating(false);
-  }
-};
+    setIsCreating(true);
+    setError("");
+
+    try {
+      // 1. Generate quiz using Gemini AI
+      console.log("🎯 STEP 1: Generating questions with Gemini...");
+      const questions = await generateQuizWithGemini({
+        topic: quizForm.topic,
+        numberOfQuestions: quizForm.numberOfQuestions,
+        difficulty: quizForm.difficulty,
+      });
+      console.log("✅ STEP 1 COMPLETE: Generated", questions.length, "questions");
+      console.log("Questions:", questions);
+
+      // 2. Generate unique quiz code
+      console.log("🎯 STEP 2: Generating quiz code...");
+      const code = generateQuizCode();
+      console.log("✅ STEP 2 COMPLETE: Code =", code);
+
+      // 3. Create quiz object
+      console.log("🎯 STEP 3: Creating quiz object...");
+      const newQuiz = {
+        code,
+        topic: quizForm.topic,
+        difficulty: quizForm.difficulty,
+        questions: questions,
+        questionsCount: questions.length,
+        createdBy: publicKey,
+      };
+      console.log("✅ STEP 3 COMPLETE: Quiz object created");
+      console.log("Quiz:", newQuiz);
+
+      // 4. Save to Firebase
+      console.log("🎯 STEP 4: Saving to Firebase...");
+      console.log("Calling saveQuizToFirebase with:", newQuiz);
+      
+      try {
+        await saveQuizToFirebase(newQuiz);
+        console.log("✅ STEP 4 COMPLETE: Saved to Firebase successfully!");
+      } catch (firebaseError) {
+        console.error("❌ FIREBASE ERROR:", firebaseError);
+        console.error("Error message:", firebaseError.message);
+        console.error("Error stack:", firebaseError.stack);
+        throw new Error(`Firebase save failed: ${firebaseError.message}`);
+      }
+
+      // 5. Generate shareable link
+      console.log("🎯 STEP 5: Generating shareable link...");
+      const shareableLink = `${window.location.origin}/join?code=${code}`;
+      console.log("✅ STEP 5 COMPLETE: Link =", shareableLink);
+      
+      // 6. Update UI state
+      console.log("🎯 STEP 6: Updating UI state...");
+      setGeneratedQuiz(newQuiz);
+      setQuizCode(code);
+      setQuizLink(shareableLink);
+      
+      // Add to local state
+      setActiveQuizzes([{ ...newQuiz, participants: 0 }, ...activeQuizzes]);
+      
+      console.log("🎉 ALL STEPS COMPLETE! Quiz created successfully!");
+      
+    } catch (err) {
+      console.error("❌ QUIZ CREATION ERROR:", err);
+      console.error("Error type:", err.name);
+      console.error("Error message:", err.message);
+      console.error("Full error:", err);
+      setError(err.message || "Failed to create quiz. Please try again.");
+    } finally {
+      console.log("🏁 Cleaning up...");
+      setIsCreating(false);
+    }
+  };
 
   const copyQuizCode = () => {
     if (quizCode) {
@@ -200,7 +225,9 @@ const handleCreateQuiz = async () => {
           <div className="bg-white rounded-xl p-6 shadow-md border border-slate-100">
             <div className="flex items-center justify-between mb-2">
               <Clock className="w-8 h-8 text-green-500" />
-              <span className="text-2xl font-bold text-slate-900">0</span>
+              <span className="text-2xl font-bold text-slate-900">
+                {activeQuizzes.filter(quiz => quiz.status === 'completed').length}
+              </span>
             </div>
             <p className="text-slate-600 text-sm">Completed</p>
           </div>
@@ -230,7 +257,12 @@ const handleCreateQuiz = async () => {
             <h2 className="text-xl font-bold text-slate-900">Your Quizzes</h2>
           </div>
           <div className="divide-y divide-slate-100">
-            {activeQuizzes.length === 0 ? (
+            {loadingQuizzes ? (
+              <div className="px-6 py-12 text-center">
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
+                <p className="text-slate-600 mt-2">Loading quizzes...</p>
+              </div>
+            ) : activeQuizzes.length === 0 ? (
               <div className="px-6 py-12 text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
                   <Plus className="w-8 h-8 text-slate-400" />
@@ -499,6 +531,9 @@ const QuizListItem = ({ quiz }) => {
             <span className="flex items-center space-x-1">
               <Users className="w-4 h-4" />
               <span>{participantCount} participants</span>
+            </span>
+            <span className="flex items-center space-x-1">
+              <span>Status: {quiz.status}</span>
             </span>
           </div>
         </div>
