@@ -1,73 +1,56 @@
-# Welcome to your Lovable project
+# 🌟 Stellar Quiz Earn
 
-## Project info
+> A Web3-based quiz platform that rewards users for learning — powered by the **Stellar blockchain**.
 
-**URL**: https://lovable.dev/projects/278cd995-6fc6-47d8-b42d-1ce6e4b31395
+---
 
-## How can I edit this code?
+## 🧠 Project Concept
 
-There are several ways of editing your application.
+**Stellar Quiz Earn** is a blockchain-powered quiz application that allows users to **connect their Freighter wallet**, play interactive quizzes, and **earn rewards securely** through the **Stellar Network**.
 
-**Use Lovable**
+The project combines **education**, **fun**, and **Web3 technology**, introducing users to blockchain in a simple and engaging way.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/278cd995-6fc6-47d8-b42d-1ce6e4b31395) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🎯 Objective
 
-**Use your preferred IDE**
+The aim of this project is to make **learning interactive and rewarding**, while promoting **blockchain awareness** among students and developers.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Traditional quiz platforms rely on centralized servers for storing and distributing rewards — which can be manipulated or delayed.  
+**Stellar Quiz Earn** solves this by using blockchain to ensure **transparency, fairness, and trust** in reward distribution.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## ⚙️ Features
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+✅ **Connect Wallet:**  
+Users securely connect using the **Freighter Wallet** on the Stellar network.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+✅ **Interactive Dashboard:**  
+Once connected, users can access their personalized dashboard to play quizzes.
 
-# Step 3: Install the necessary dependencies.
-npm i
+✅ **Blockchain-Backed Rewards:**  
+All rewards are managed via the **Stellar blockchain**, ensuring fairness and transparency.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+✅ **Fast Transactions:**  
+Stellar provides quick and low-cost operations, ideal for handling quiz rewards.
 
-**Edit a file directly in GitHub**
+✅ **Simple UI/UX:**  
+Built with **Tailwind CSS** and **ShadCN UI**, ensuring a smooth and modern user experience.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 🏗️ Tech Stack
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+| Category | Technology Used |
+|-----------|----------------|
+| **Frontend** | React.js, Vite, Tailwind CSS, |
+| **Blockchain** | Stellar Network, Freighter Wallet, Stellar SDK |
+| **Routing** | React Router v6 |
+| **State Management** | React Hooks |
+| **Notifications** | Sonner, Toaster |
+| **Icons** | Lucide React |
+| **Deployment** | Vercel / Netlify |
 
-## What technologies are used for this project?
+---
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/278cd995-6fc6-47d8-b42d-1ce6e4b31395) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
