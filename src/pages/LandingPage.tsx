@@ -1,41 +1,69 @@
-import React from "react";
+// src/components/LandingPage.jsx
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Wallet, Sparkles, Users, Trophy, Clock, Shield } from "lucide-react";
+import { Wallet, Sparkles, Users, Trophy, Clock, Shield, AlertCircle } from "lucide-react";
+import { requestAccess } from "@stellar/freighter-api";
 
-const LandingPage = () => {
+const LandingPage = ({ publicKey, setPublicKey }) => {
   const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const handleConnectWallet = async () => {
+    try {
+      setIsConnecting(true);
+      setError("");
+      const access = await requestAccess();
+
+      if (access?.address) {
+        setPublicKey(access.address);
+        navigate("/dashboard");
+      } else {
+        setError("Wallet connection failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("❌ Freighter connect error:", err);
+      setError("Error connecting to Freighter wallet. Make sure it's installed.");
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleJoinQuiz = () => {
+    navigate("/join");
+  };
 
   const features = [
     {
       icon: Sparkles,
       title: "AI-Generated Quizzes",
-      description: "Powered by Google Gemini AI for intelligent, dynamic question generation"
+      description: "Powered by Google Gemini AI for intelligent, dynamic question generation",
     },
     {
       icon: Users,
       title: "Join with Code",
-      description: "Simple 6-digit codes to join any quiz instantly"
+      description: "Simple 6-digit codes to join any quiz instantly",
     },
     {
       icon: Trophy,
       title: "Compete & Win",
-      description: "Earn rewards on the Stellar blockchain for top performances"
+      description: "Earn rewards on the Stellar blockchain for top performances",
     },
     {
       icon: Clock,
       title: "Real-Time Results",
-      description: "See your performance and rankings update live"
+      description: "See your performance and rankings update live",
     },
     {
       icon: Shield,
       title: "Blockchain Security",
-      description: "Secure, transparent, and verifiable with Stellar technology"
+      description: "Secure, transparent, and verifiable with Stellar technology",
     },
     {
       icon: Wallet,
       title: "Web3 Integration",
-      description: "Connect your Freighter wallet and start earning"
-    }
+      description: "Connect your Freighter wallet and start earning",
+    },
   ];
 
   return (
@@ -53,17 +81,36 @@ const LandingPage = () => {
             </p>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="max-w-md mx-auto bg-red-50 border border-red-200 rounded-lg p-3">
+              <div className="flex items-start space-x-2">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          )}
+
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
             <button
-              onClick={() => navigate("/dashboard")}
-              className="group flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-violet-600 hover:from-blue-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95"
+              onClick={handleConnectWallet}
+              disabled={isConnecting || !!publicKey}
+              className={`group flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-violet-600 hover:from-blue-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 ${
+                isConnecting || publicKey ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
               <Wallet className="w-5 h-5" />
-              <span>Connect & Start</span>
+              <span>
+                {isConnecting
+                  ? "Connecting..."
+                  : publicKey
+                  ? "Wallet Connected"
+                  : "Connect & Start"}
+              </span>
             </button>
             <button
-              onClick={() => navigate("/join")}
+              onClick={handleJoinQuiz}
               className="flex items-center space-x-3 px-8 py-4 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl shadow-md hover:shadow-lg border-2 border-slate-200 transition-all duration-200 active:scale-95"
             >
               <Users className="w-5 h-5" />
@@ -145,18 +192,18 @@ const LandingPage = () => {
               {
                 step: "01",
                 title: "Connect Wallet",
-                description: "Link your Freighter wallet to get started securely"
+                description: "Link your Freighter wallet to get started securely",
               },
               {
                 step: "02",
                 title: "Create or Join",
-                description: "Start a new quiz or join one with a 6-digit code"
+                description: "Start a new quiz or join one with a 6-digit code",
               },
               {
                 step: "03",
                 title: "Play & Earn",
-                description: "Answer questions and earn rewards on the blockchain"
-              }
+                description: "Answer questions and earn rewards on the blockchain",
+              },
             ].map((item, index) => (
               <div key={index} className="text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-violet-600 rounded-full text-white font-bold text-2xl mb-4 shadow-lg">
@@ -165,9 +212,7 @@ const LandingPage = () => {
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">
                   {item.title}
                 </h3>
-                <p className="text-slate-600">
-                  {item.description}
-                </p>
+                <p className="text-slate-600">{item.description}</p>
               </div>
             ))}
           </div>
@@ -184,10 +229,17 @@ const LandingPage = () => {
             Join thousands of learners earning on the blockchain
           </p>
           <button
-            onClick={() => navigate("/dashboard")}
-            className="px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+            onClick={handleConnectWallet}
+            disabled={isConnecting || !!publicKey}
+            className={`px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 ${
+              isConnecting || publicKey ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            Connect Your Wallet Now
+            {isConnecting
+              ? "Connecting..."
+              : publicKey
+              ? "Wallet Connected"
+              : "Connect Your Wallet Now"}
           </button>
         </div>
       </div>

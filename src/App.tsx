@@ -24,8 +24,11 @@ const App = () => {
         
         <Routes>
           {/* Landing page */}
-          <Route path="/" element={<LandingPage />} />
-          
+          <Route 
+          path="/"
+          element={<LandingPage publicKey={publicKey} setPublicKey={setPublicKey} />}
+          />
+          {/* <LandingPage publicKey={publicKey} setPublicKey={setPublicKey} />           */}
           {/* Join quiz by code */}
           <Route 
             path="/join" 
