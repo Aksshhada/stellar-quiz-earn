@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { Wallet, AlertCircle, Menu, X } from "lucide-react";
 import { requestAccess } from "@stellar/freighter-api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
-const Header = ({ setPublicKey }) => {
+const Header = ({ publicKey, setPublicKey }) => {
   const [isConnecting, setIsConnecting] = useState(false);
-  const [publicKey, setLocalPublicKey] = useState("");
   const [error, setError] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Helper to shorten wallet address
   const truncateAddress = (address) =>
@@ -23,9 +23,11 @@ const Header = ({ setPublicKey }) => {
       const access = await requestAccess();
 
       if (access?.address) {
-        setLocalPublicKey(access.address);
-        setPublicKey(access.address); // update parent App.jsx
-        navigate("/dashboard"); // redirect to dashboard
+        setPublicKey(access.address);
+        // Only navigate if on landing page
+        if (location.pathname === "/") {
+          navigate("/dashboard");
+        }
       } else {
         setError("Wallet connection failed. Please try again.");
       }
@@ -39,8 +41,12 @@ const Header = ({ setPublicKey }) => {
 
   // ✅ Disconnect Handler
   const disconnectWallet = () => {
-    setLocalPublicKey("");
     setPublicKey("");
+    navigate("/");
+  };
+
+  const handleLogoClick = () => {
+    navigate("/");
   };
 
   return (
@@ -49,30 +55,47 @@ const Header = ({ setPublicKey }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo/Brand */}
-            <div className="flex items-center space-x-3">
+            <button 
+              onClick={handleLogoClick}
+              className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+            >
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-violet-600 rounded-lg flex items-center justify-center shadow-md">
                 <Wallet className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent hidden sm:block">
                 Stellar Quiz
               </span>
-            </div>
+            </button>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
               {publicKey && (
-                <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium text-green-800">
-                      Connected
+                <>
+                  <button
+                    onClick={() => navigate("/dashboard")}
+                    className="px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={() => navigate("/join")}
+                    className="px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors"
+                  >
+                    Join Quiz
+                  </button>
+                  <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-medium text-green-800">
+                        Connected
+                      </span>
+                    </div>
+                    <div className="h-5 w-px bg-green-300"></div>
+                    <span className="text-sm font-mono text-slate-900 font-medium">
+                      {truncateAddress(publicKey)}
                     </span>
                   </div>
-                  <div className="h-5 w-px bg-green-300"></div>
-                  <span className="text-sm font-mono text-slate-900 font-medium">
-                    {truncateAddress(publicKey)}
-                  </span>
-                </div>
+                </>
               )}
 
               {publicKey ? (
@@ -139,6 +162,26 @@ const Header = ({ setPublicKey }) => {
                     {publicKey}
                   </div>
                 </div>
+
+                <button
+                  onClick={() => {
+                    navigate("/dashboard");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-700 font-medium rounded-lg transition-colors border border-slate-200"
+                >
+                  Dashboard
+                </button>
+
+                <button
+                  onClick={() => {
+                    navigate("/join");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-700 font-medium rounded-lg transition-colors border border-slate-200"
+                >
+                  Join Quiz
+                </button>
 
                 <button
                   onClick={() => {
