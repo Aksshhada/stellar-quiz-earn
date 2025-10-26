@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { QuizQuestion } from "./QuizQuestion";
-import { QuizResults } from "./QuizResults";
+import { QuizQuestion } from "../components/quiz/QuizQuestion";
+import { QuizResults } from "../components/quiz/QuizResults";
 import { toast } from "@/hooks/use-toast";
 
 export const Quiz = () => {
